@@ -4,9 +4,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HUEYII</title>
+  <title>HUEYII PERFORMANCE & BALANCE</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://unpkg.com/vue@3"></script>
+  
+  <script src="aircraftData.js"></script>
+  <script src="converterEngine.js"></script>
+  <script src="ppcEngine.js"></script>
+  <script src="paEngine.js"></script>
+  <script src="cgEngine.js"></script>
   <script src="app.js" defer></script>
 </head>
 
@@ -15,8 +21,8 @@
     <div class="tab">
       <button @click="currentTab = 'PPC'" :class="['tab-button', { active: currentTab === 'PPC' }]">PPC</button>
       <button @click="currentTab = 'PA'" :class="['tab-button', { active: currentTab === 'PA' }]">PA</button>
-      <button @click="currentTab = 'Converter'"
-        :class="['tab-button', { active: currentTab === 'Converter' }]">Converter</button>
+      <button @click="currentTab = 'CG'" :class="['tab-button', { active: currentTab === 'CG' }]">CG & Fuel</button>
+      <button @click="currentTab = 'Converter'" :class="['tab-button', { active: currentTab === 'Converter' }]">Converter</button>
     </div>
 
     <div v-show="currentTab === 'PPC'" class="tabcontent">
@@ -25,15 +31,12 @@
         <h5>Revised May 2023</h5>
         <h6>(BHT PUB-92-004-10 /REVISION 10 — 21 AUGUST 2017)</h6>
       </header>
+      
       <div class="dropdown" @click="toggleDropdown">
         <button class="dropdown-toggle fire-button">Firefighting</button>
         <div v-if="showDropdown" class="dropdown-menu">
-          <button @click="setFirefightingLoad(70); toggleDropdown()">
-            70% bucket
-          </button>
-          <button @click="setFirefightingLoad(100); toggleDropdown()">
-            100% bucket
-          </button>
+          <button @click="setFirefightingLoad(70); toggleDropdown()">70% bucket</button>
+          <button @click="setFirefightingLoad(100); toggleDropdown()">100% bucket</button>
         </div>
       </div>
 
@@ -42,20 +45,7 @@
         <div class="input-wrapper">
           <select v-model="selectedAircraft" @change="updateBasicWeight">
             <option value="">Select</option>
-            <option value="L1201">L1201</option>
-            <option value="L1202">L1202</option>
-            <option value="L1203">L1203</option>
-            <option value="L1204">L1204</option>
-            <option value="L1205">L1205</option>
-            <option value="L1206">L1206</option>
-            <option value="L1207">L1207</option>
-            <option value="L1208">L1208</option>
-            <option value="L1209">L1209</option>
-            <option value="L1210">L1210</option>
-            <option value="L1211">L1211</option>
-            <option value="L1212">L1212</option>
-            <option value="L1215">L1215</option>
-            <option value="L1216">L1216</option>
+            <option v-for="(data, ac) in cgAircraftDetails" :key="ac" :value="ac">{{ ac }}</option>
           </select>
         </div>
       </div>
@@ -80,9 +70,7 @@
       </div>
       <div>
         <label for="takeoffGW">Take Off GW: (lbs.)</label>
-        <p :class="{'orange-yellow': takeoffGW > 10500}" class="blue">
-          {{ takeoffGW }}
-        </p>
+        <p :class="{'orange-yellow': takeoffGW > 10500}" class="blue">{{ takeoffGW }}</p>
       </div>
       <div v-if="TOGWErrorMessage" class="error-message">
         <p>{{ TOGWErrorMessage }}</p>
@@ -117,6 +105,7 @@
         <label for="densityAltitude">Density Altitude: (ft.)</label>
         <p class="blue">{{ densityAltitude }}</p>
       </div>
+      
       <div class="column">
         <div>
           <label for="maxTQ">Max TQ Available (Fig 7-2):</label>
@@ -124,39 +113,31 @@
         </div>
         <div>
           <label for="predictedHoverTQ2ft">Predicted hover TQ 2 ft. (Fig 7-3):</label>
-          <p :class="{'red': predictedHoverTQ2ft > 100}" class="blue">
-            {{ predictedHoverTQ2ft }}
-          </p>
+          <p :class="{'red': predictedHoverTQ2ft > 100}" class="blue">{{ predictedHoverTQ2ft }}</p>
         </div>
         <div>
           <label for="predictedHoverTQ4ft">Predicted hover TQ 4 ft. (Fig 7-3):</label>
-          <p :class="{'red': predictedHoverTQ4ft > 100}" class="blue">
-            {{ predictedHoverTQ4ft }}
-          </p>
+          <p :class="{'red': predictedHoverTQ4ft > 100}" class="blue">{{ predictedHoverTQ4ft }}</p>
         </div>
         <div>
           <label for="predictedHoverTQ30ft">Predicted hover TQ 30 ft. (Fig 7-3):</label>
-          <p :class="{'red': predictedHoverTQ30ft > 100}" class="blue">
-            {{ predictedHoverTQ30ft }}
-          </p>
+          <p :class="{'red': predictedHoverTQ30ft > 100}" class="blue">{{ predictedHoverTQ30ft }}</p>
         </div>
         <div>
           <label for="predictedHoverTQ100ft">Predicted hover TQ 100 ft. (Fig 7-3):</label>
-          <p :class="{'red': predictedHoverTQ100ft > 100}" class="blue">
-            {{ predictedHoverTQ100ft }}
-          </p>
+          <p :class="{'red': predictedHoverTQ100ft > 100}" class="blue">{{ predictedHoverTQ100ft }}</p>
         </div>
       </div>
+      
       <div class="reset-button-container">
         <label>&nbsp;</label>
         <button @click="resetForm">Reset</button>
       </div>
+      
       <div v-show="showFirefightingText" class="firefighting-info">
         <p>Bambi bucket empty weight: 167 lbs.</p>
         <p v-if="bucketPercentage === 70">70% Bambi capacity = 2500 lbs.</p>
-        <p v-if="bucketPercentage === 100">
-          100% Bambi capacity = 3500 lbs.
-        </p>
+        <p v-if="bucketPercentage === 100">100% Bambi capacity = 3500 lbs.</p>
         <p>Control head weight = 17.6 lbs.</p>
         <p>Cockpit doors Removed = -2x23 = -46 lbs.</p>
         <p>Crew of 3 = x200 = 600 lbs.</p>
@@ -193,7 +174,7 @@
       </div>
       <div>
         <label for="mgt">MGT:</label>
-        <input type="number" class="pa-input" v-model="mgt" />
+        <input type="number" class="pa-input" v-model="mgt" @input="limitMGT" />
       </div>
       <div>
         <label for="actualTorque">Actual Torque:</label>
@@ -212,7 +193,117 @@
       </div>
     </div>
 
-    <div class="tab-content" v-show="currentTab === 'Converter'">
+    <div v-show="currentTab === 'CG'" class="tabcontent">
+      <header>
+        <h2>Weight & Balance &amp; Fuel Optimization</h2>
+        <h5>Moment and weight last updated: 30/1/2023</h5>
+      </header>
+
+      <div class="cg-section">
+        <h3>Center of Gravity Configuration</h3>
+        <div>
+          <label>Aircraft Number:</label>
+          <select v-model="cgAircraft" @change="updateCGAircraftData">
+            <option value="">Select</option>
+            <option v-for="(data, ac) in cgAircraftDetails" :key="ac" :value="ac">{{ ac }}</option>
+          </select>
+        </div>
+        <div>
+          <label>A/C Basic Weight (lbs):</label>
+          <p class="blue">{{ cgBasicWeight || '-' }}</p>
+        </div>
+        <div>
+          <label>A/C Basic Moment:</label>
+          <p class="blue">{{ cgBasicMoment || '-' }}</p>
+        </div>
+        <div>
+          <label>Fuel Weight (lbs):</label>
+          <input type="number" v-model.number="cgFuel" @input="calculateCG" />
+        </div>
+        <div>
+          <label>Pilot 1 Weight:</label>
+          <input type="number" v-model.number="cgPilot1" @input="calculateCG" />
+          <select v-model="cgPilot1Unit" @change="calculateCG">
+            <option value="lbs">lbs</option>
+            <option value="Kg">Kg</option>
+          </select>
+        </div>
+        <div>
+          <label>Pilot 2 Weight:</label>
+          <input type="number" v-model.number="cgPilot2" @input="calculateCG" />
+          <select v-model="cgPilot2Unit" @change="calculateCG">
+            <option value="lbs">lbs</option>
+            <option value="Kg">Kg</option>
+          </select>
+        </div>
+        <div>
+          <label>Crew Chief Weight:</label>
+          <input type="number" v-model.number="cgPassenger1" @input="calculateCG" />
+          <select v-model="cgPassenger1Unit" @change="calculateCG">
+            <option value="lbs">lbs</option>
+            <option value="Kg">Kg</option>
+          </select>
+        </div>
+
+        <div class="column" style="display: block; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+          <div>
+            <label>Total Weight (lbs):</label>
+            <p class="blue">{{ totalWeight }}</p>
+          </div>
+          <div>
+            <label>Total Moment:</label>
+            <p class="blue">{{ totalMoment }}</p>
+          </div>
+          <div>
+            <label>Calculated Longitudinal CG:</label>
+            <p class="blue" style="color: #f25b00; font-size: 1.15em;">{{ calculatedCG }}</p>
+          </div>
+        </div>
+      </div>
+
+      <hr style="margin: 25px 0; border: 0; border-top: 2px dashed #4b5320;" />
+
+      <div class="cg-section">
+        <h3>Minimum Fuel Target Optimization</h3>
+        <div>
+          <label>Desired CG Target:</label>
+          <input type="number" step="0.01" v-model.number="minFuelDesiredCG" @input="calculateMinFuel" />
+        </div>
+        <div>
+          <label>Pilot 1 Weight:</label>
+          <input type="number" v-model.number="minFuelPilot1" @input="calculateMinFuel" />
+          <select v-model="minFuelPilot1Unit" @change="calculateMinFuel">
+            <option value="lbs">lbs</option>
+            <option value="Kg">Kg</option>
+          </select>
+        </div>
+        <div>
+          <label>Pilot 2 Weight:</label>
+          <input type="number" v-model.number="minFuelPilot2" @input="calculateMinFuel" />
+          <select v-model="minFuelPilot2Unit" @change="calculateMinFuel">
+            <option value="lbs">lbs</option>
+            <option value="Kg">Kg</option>
+          </select>
+        </div>
+        <div>
+          <label>Crew Chief Weight:</label>
+          <input type="number" v-model.number="minFuelPassenger1" @input="calculateMinFuel" />
+          <select v-model="minFuelPassenger1Unit" @change="calculateMinFuel">
+            <option value="lbs">lbs</option>
+            <option value="Kg">Kg</option>
+          </select>
+        </div>
+
+        <div class="column" style="display: block; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+          <div>
+            <label>Maximum Allowed Fuel Weight:</label>
+            <p class="blue" style="color: #2a623d; font-size: 1.15em;">{{ minFuelResult }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabcontent" v-show="currentTab === 'Converter'">
       <div class="unit-converter">
         <h2>Pressure Unit Converter</h2>
         <div class="conversion-row">
@@ -234,12 +325,6 @@
         </div>
       </div>
     </div>
-  </div>
-  </div>
-
-
-
-
   </div>
 </body>
 
