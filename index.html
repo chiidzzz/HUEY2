@@ -13,6 +13,7 @@
   <script src="ppcEngine.js"></script>
   <script src="paEngine.js"></script>
   <script src="cgEngine.js"></script>
+  <script src="autorotationEngine.js"></script>
   <script src="app.js" defer></script>
 </head>
 
@@ -23,6 +24,7 @@
       <button @click="currentTab = 'PA'" :class="['tab-button', { active: currentTab === 'PA' }]">PA</button>
       <button @click="currentTab = 'CG'" :class="['tab-button', { active: currentTab === 'CG' }]">CG & Fuel</button>
       <button @click="currentTab = 'Converter'" :class="['tab-button', { active: currentTab === 'Converter' }]">Converter</button>
+      <button @click="currentTab = 'Auto'" :class="['tab-button', { active: currentTab === 'Auto' }]">Autorotation RPM</button>
     </div>
 
     <div v-show="currentTab === 'PPC'" class="tabcontent">
@@ -322,6 +324,93 @@
         </div>
         <div class="conversion-row">
           <label>Converted Value: <span class="converted-value">{{ PressureConvertedValue }}</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div v-show="currentTab === 'Auto'" class="tabcontent">
+      <header>
+        <h2>Autorotation RPM</h2>
+        <h5>Allowed RPM Calculation</h5>
+      </header>
+
+      <div class="cg-section">
+        <div>
+          <label>Aircraft Number:</label>
+          <select v-model="autoAircraft" @change="updateAutoData">
+            <option value="">Select</option>
+            <option v-for="(data, ac) in cgAircraftDetails" :key="ac" :value="ac">{{ ac }}</option>
+          </select>
+        </div>
+        <div>
+          <label>A/C Basic Weight (lbs):</label>
+          <p class="blue">{{ autoBasicWeight || '-' }}</p>
+        </div>
+        <div>
+          <label>Fuel Weight (lbs):</label>
+          <input type="number" v-model.number="autoFuel" @input="calculateAuto" />
+        </div>
+        <div>
+          <label>Pilot Weight:</label>
+          <input type="number" v-model.number="autoPilot" @input="calculateAuto" />
+          <select v-model="autoPilotUnit" @change="calculateAuto">
+            <option value="lbs">lbs</option>
+            <option value="Kg">Kg</option>
+          </select>
+        </div>
+        <div>
+          <label>Copilot Weight:</label>
+          <input type="number" v-model.number="autoCopilot" @input="calculateAuto" />
+          <select v-model="autoCopilotUnit" @change="calculateAuto">
+            <option value="lbs">lbs</option>
+            <option value="Kg">Kg</option>
+          </select>
+        </div>
+        <div>
+          <label>Passenger Weight:</label>
+          <input type="number" v-model.number="autoPassenger" @input="calculateAuto" />
+          <select v-model="autoPassengerUnit" @change="calculateAuto">
+            <option value="lbs">lbs</option>
+            <option value="Kg">Kg</option>
+          </select>
+        </div>
+        <div>
+          <label>Total Weight (lbs):</label>
+          <p class="blue">{{ autoTotalWeight }}</p>
+        </div>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 2px dashed #4b5320;" />
+
+        <div>
+          <label>QNH:</label>
+          <input type="number" v-model="autoQnh" @input="calculateAuto" />
+          <select v-model="autoQnhUnit" @change="calculateAuto">
+            <option value="hPa">hPa</option>
+            <option value="inHg">inHg</option>
+          </select>
+        </div>
+        <div>
+          <label>FAT (°C):</label>
+          <input type="number" v-model="autoFat" @input="calculateAuto" />
+        </div>
+        <div>
+          <label>Indicated Altitude (ft):</label>
+          <input type="number" v-model="autoIndicatedAltitude" @input="calculateAuto" />
+        </div>
+        <div>
+          <label>Pressure Altitude (ft):</label>
+          <p class="blue">{{ autoPressureAltitude }}</p>
+        </div>
+        <div>
+          <label>Density Altitude (ft):</label>
+          <p class="blue">{{ autoDensityAltitude }}</p>
+        </div>
+
+        <div class="column" style="display: block; margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+          <div>
+            <label>Allowed RPM:</label>
+            <p class="blue" style="color: #f25b00; font-size: 1.15em;">{{ autoAllowedRPM }}</p>
+          </div>
         </div>
       </div>
     </div>

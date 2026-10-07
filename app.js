@@ -20,7 +20,13 @@ const app = Vue.createApp({
       cgAircraft: "", cgBasicWeight: null, cgBasicMoment: null, cgFuel: 920,
       cgPilot1: 90, cgPilot1Unit: "Kg", cgPilot2: 90, cgPilot2Unit: "Kg", cgPassenger1: 0, cgPassenger1Unit: "Kg",
       totalWeight: "-", totalMoment: "-", calculatedCG: "-",
-      minFuelDesiredCG: 140, minFuelPilot1: 90, minFuelPilot1Unit: "Kg", minFuelPilot2: 90, minFuelPilot2Unit: "Kg", minFuelPassenger1: 0, minFuelPassenger1Unit: "Kg", minFuelResult: "-"
+      minFuelDesiredCG: 140, minFuelPilot1: 90, minFuelPilot1Unit: "Kg", minFuelPilot2: 90, minFuelPilot2Unit: "Kg", minFuelPassenger1: 0, minFuelPassenger1Unit: "Kg", minFuelResult: "-",
+
+      // Auto Fields
+      autoAircraft: "", autoBasicWeight: null, autoFuel: 1325,
+      autoPilot: 70, autoPilotUnit: "Kg", autoCopilot: 90, autoCopilotUnit: "Kg", autoPassenger: 80, autoPassengerUnit: "Kg",
+      autoTotalWeight: "-", autoQnh: 30.21, autoQnhUnit: "inHg", autoFat: 18, autoIndicatedAltitude: 1000,
+      autoPressureAltitude: "-", autoDensityAltitude: "-", autoAllowedRPM: "-"
     };
   },
   watch: {
@@ -146,23 +152,18 @@ const app = Vue.createApp({
     },
     calculateCG() {
       if (!this.cgAircraft) { this.totalWeight = this.totalMoment = "-"; this.calculatedCG = "Select an Aircraft"; return; }
-      
-      // Strict User Input Restrictions: Prevents values over 1420 or under 10 in the configuration field
       if (this.cgFuel !== null && this.cgFuel !== "") {
         if (this.cgFuel > 1420) this.cgFuel = 1420;
         if (this.cgFuel < 10) this.cgFuel = 10;
       }
-
       const wFuel = parseFloat(this.cgFuel) || 0;
       const wP1 = CGEngine.getWeightLbs(this.cgPilot1, this.cgPilot1Unit);
       const wP2 = CGEngine.getWeightLbs(this.cgPilot2, this.cgPilot2Unit);
       const wPax1 = CGEngine.getWeightLbs(this.cgPassenger1, this.cgPassenger1Unit);
-      
       const totW = this.cgBasicWeight + wFuel + wP1 + wP2 + wPax1;
       const totM = this.cgBasicMoment + CGEngine.getFuelMoment(wFuel) + (wP1 * 46.7) + (wP2 * 46.7) + (wPax1 * 85);
       
       this.totalWeight = totW.toFixed(2); this.totalMoment = totM.toFixed(2);
-      // Fixed Precision Constraint: Restrict Longitudinal CG to 2 decimal places
       this.calculatedCG = totW > 0 ? (totM / totW).toFixed(2) : "0.00";
     },
     calculateMinFuel() {
@@ -173,6 +174,51 @@ const app = Vue.createApp({
         CGEngine.getWeightLbs(this.minFuelPilot2, this.minFuelPilot2Unit),
         CGEngine.getWeightLbs(this.minFuelPassenger1, this.minFuelPassenger1Unit)
       );
+    },
+    updateAutoData() {
+      if (this.autoAircraft && this.cgAircraftDetails[this.autoAircraft]) {
+        this.autoBasicWeight = this.cgAircraftDetails[this.autoAircraft].weight;
+      } else {
+        this.autoBasicWeight = null;
+      }
+      this.calculateAuto();
+    },
+    calculateAuto() {
+      if (!this.autoAircraft) {
+        this.autoTotalWeight = "-";
+        this.autoPressureAltitude = "-";
+        this.autoDensityAltitude = "-";
+        this.autoAllowedRPM = "-";
+        return;
+      }
+
+      const wFuel = parseFloat(this.autoFuel) || 0;
+      const wPilot = CGEngine.getWeightLbs(this.autoPilot, this.autoPilotUnit);
+      const wCopilot = CGEngine.getWeightLbs(this.autoCopilot, this.autoCopilotUnit);
+      const wPassenger = CGEngine.getWeightLbs(this.autoPassenger, this.autoPassengerUnit);
+
+      const totW = this.autoBasicWeight + wFuel + wPilot + wCopilot + wPassenger;
+      this.autoTotalWeight = totW.toFixed(2);
+
+      const qnh = parseFloat(this.autoQnh);
+      const indAlt = parseFloat(this.autoIndicatedAltitude);
+      const fat = parseFloat(this.autoFat);
+
+      if (isNaN(qnh) || isNaN(indAlt) || isNaN(fat)) {
+        this.autoPressureAltitude = "-";
+        this.autoDensityAltitude = "-";
+        this.autoAllowedRPM = "-";
+        return;
+      }
+
+      const qnhFactor = this.autoQnhUnit === "inHg" ? 1 : 33.8639;
+      const pa = indAlt + (29.92 - qnh / qnhFactor) * 1000;
+      this.autoPressureAltitude = pa.toFixed(1);
+
+      const da = pa + 120 * (fat - (15 - pa * 0.00198));
+      this.autoDensityAltitude = da.toFixed(1);
+
+      this.autoAllowedRPM = AutorotationEngine.calculateRPM(da, totW);
     },
     resetForm() {
       this.showFirefightingText = this.showDropdown = false;
