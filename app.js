@@ -26,14 +26,14 @@ const app = Vue.createApp({
       autoAircraft: "", autoBasicWeight: null, autoFuel: 1325,
       autoPilot: 70, autoPilotUnit: "Kg", autoCopilot: 90, autoCopilotUnit: "Kg", autoPassenger: 80, autoPassengerUnit: "Kg",
       autoTotalWeight: "-", autoQnh: 30.21, autoQnhUnit: "inHg", autoFat: 18, autoIndicatedAltitude: 1000,
-      autoPressureAltitude: "-", autoDensityAltitude: "-", autoAllowedRPM: "-"
+      autoPressureAltitude: "-", autoDensityAltitude: "-", autoAllowedRPM: "-", 
+      autoLowerBound: null, autoUpperBound: null, autoActualRPM: null, autoStatusText: ""
     };
   },
   computed: {
     autoAircraftList() {
       const list = {};
       for (const ac in this.cgAircraftDetails) {
-        // Filter array strictly to include L12xx aircraft
         if (ac.startsWith('L12')) {
           list[ac] = this.cgAircraftDetails[ac];
         }
@@ -204,6 +204,9 @@ const app = Vue.createApp({
         this.autoPressureAltitude = "-";
         this.autoDensityAltitude = "-";
         this.autoAllowedRPM = "-";
+        this.autoLowerBound = null;
+        this.autoUpperBound = null;
+        this.autoStatusText = "";
         return;
       }
 
@@ -223,6 +226,9 @@ const app = Vue.createApp({
         this.autoPressureAltitude = "-";
         this.autoDensityAltitude = "-";
         this.autoAllowedRPM = "-";
+        this.autoLowerBound = null;
+        this.autoUpperBound = null;
+        this.autoStatusText = "";
         return;
       }
 
@@ -233,7 +239,33 @@ const app = Vue.createApp({
       const da = pa + 120 * (fat - (15 - pa * 0.00198));
       this.autoDensityAltitude = da.toFixed(1);
 
-      this.autoAllowedRPM = AutorotationEngine.calculateRPM(da, totW);
+      const rawRPM = AutorotationEngine.calculateRPM(da, totW);
+      
+      if (typeof rawRPM === "string") {
+        this.autoAllowedRPM = rawRPM;
+        this.autoLowerBound = null;
+        this.autoUpperBound = null;
+        this.autoStatusText = "";
+      } else {
+        // Build the base display format
+        this.autoAllowedRPM = rawRPM.toFixed(1) + " ± 8";
+        
+        // Define exact bounds to check limits against
+        this.autoLowerBound = rawRPM - 8;
+        this.autoUpperBound = rawRPM + 8;
+
+        // Perform limits verification if user inputs an Actual RPM
+        if (this.autoActualRPM) {
+          const actual = parseFloat(this.autoActualRPM);
+          if (actual >= this.autoLowerBound && actual <= this.autoUpperBound) {
+            this.autoStatusText = "Within Limit";
+          } else {
+            this.autoStatusText = "Out of Limit";
+          }
+        } else {
+          this.autoStatusText = "";
+        }
+      }
     },
     resetForm() {
       this.showFirefightingText = this.showDropdown = false;

@@ -331,7 +331,7 @@
     <div v-show="currentTab === 'Auto'" class="tabcontent">
       <header>
         <h2>Autorotation RPM</h2>
-        <h5>Allowed RPM Calculation</h5>
+        <h5>Allowed Autorotation RPM for Test flights</h5>
       </header>
 
       <div class="cg-section">
@@ -410,6 +410,18 @@
           <div>
             <label>Allowed RPM:</label>
             <p class="blue" style="color: #f25b00; font-size: 1.15em;">{{ autoAllowedRPM }}</p>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <label>Actual RPM (Optional):</label>
+            <input type="number" v-model.number="autoActualRPM" @input="calculateAuto" />
+          </div>
+
+          <div v-if="autoStatusText" style="margin-top: 10px;">
+            <label>Status:</label>
+            <p :class="{'blue': autoStatusText === 'Within Limit', 'red': autoStatusText === 'Out of Limit'}" style="font-size: 1.15em; font-weight: bold;">
+              {{ autoStatusText }}
+            </p>
           </div>
         </div>
       </div>

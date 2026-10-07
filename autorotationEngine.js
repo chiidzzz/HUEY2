@@ -27,10 +27,10 @@ const AutorotationEngine = {
       rpm = lower_rpm + ((gw - lower_gw) * (upper_rpm - lower_rpm)) / 500;
     }
     
-    // Structural limitations from the HUEY 2 Excel Charts with added tolerance
-    if (rpm < 295) return "295.0 ± 8";
-    if (rpm > 339) return "339.0 ± 8";
+    // Structural limitations from the HUEY 2 Excel Charts
+    if (rpm < 295) return 295.0;
+    if (rpm > 339) return 339.0;
     
-    return rpm.toFixed(1) + " ± 8";
+    return parseFloat(rpm.toFixed(1));
   }
 };
