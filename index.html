@@ -339,7 +339,7 @@
           <label>Aircraft Number:</label>
           <select v-model="autoAircraft" @change="updateAutoData">
             <option value="">Select</option>
-            <option v-for="(data, ac) in cgAircraftDetails" :key="ac" :value="ac">{{ ac }}</option>
+            <option v-for="(data, ac) in autoAircraftList" :key="ac" :value="ac">{{ ac }}</option>
           </select>
         </div>
         <div>

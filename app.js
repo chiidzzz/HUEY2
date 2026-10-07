@@ -29,6 +29,18 @@ const app = Vue.createApp({
       autoPressureAltitude: "-", autoDensityAltitude: "-", autoAllowedRPM: "-"
     };
   },
+  computed: {
+    autoAircraftList() {
+      const list = {};
+      for (const ac in this.cgAircraftDetails) {
+        // Filter array strictly to include L12xx aircraft
+        if (ac.startsWith('L12')) {
+          list[ac] = this.cgAircraftDetails[ac];
+        }
+      }
+      return list;
+    }
+  },
   watch: {
     PressureInputValue: "convertPressure",
     pressureUnitFrom: "updateConversionUnits",
@@ -152,14 +164,17 @@ const app = Vue.createApp({
     },
     calculateCG() {
       if (!this.cgAircraft) { this.totalWeight = this.totalMoment = "-"; this.calculatedCG = "Select an Aircraft"; return; }
+      
       if (this.cgFuel !== null && this.cgFuel !== "") {
         if (this.cgFuel > 1420) this.cgFuel = 1420;
         if (this.cgFuel < 10) this.cgFuel = 10;
       }
+
       const wFuel = parseFloat(this.cgFuel) || 0;
       const wP1 = CGEngine.getWeightLbs(this.cgPilot1, this.cgPilot1Unit);
       const wP2 = CGEngine.getWeightLbs(this.cgPilot2, this.cgPilot2Unit);
       const wPax1 = CGEngine.getWeightLbs(this.cgPassenger1, this.cgPassenger1Unit);
+      
       const totW = this.cgBasicWeight + wFuel + wP1 + wP2 + wPax1;
       const totM = this.cgBasicMoment + CGEngine.getFuelMoment(wFuel) + (wP1 * 46.7) + (wP2 * 46.7) + (wPax1 * 85);
       
